@@ -6,11 +6,6 @@ header("Content-Type: application/json"); // Define o tipo de resposta
 $metodo= $_SERVER ['REQUEST_METHOD'];
 // echo "Método da requisição: ". $metodo;
 
-//CONTEÚDO - ta no arquivo usuario.json
-// $usuarios = [
-//     ["id" => 1, "nome" => "Adriano", "email" => "adriano@email.com"], 
-//     ["id" => 2, "nome" => "Beatriz", "email" => "beatriz@email.com"]
-// ];
 
 
 //recupera o arquivo json na pasta do projeto
@@ -29,16 +24,22 @@ $usuarios = json_decode(file_get_contents($arquivo), true);
 
     switch ($metodo) {
         case 'GET':
-            // echo " ações do Método Get";
-             echo json_encode($usuarios);
+            // converte para json 
+             echo json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         break; 
        
        
        
         case 'POST':
-            // echo " ações do Método POST";
+            // le os dados 
             $dados= json_decode(file_get_contents('php://input'), true);
-            print_r($dados);
+
+            //verifica se os campos obrigatorios foram preenchidos 
+            if(!isset($dados["id"]) || !isset ($dados ["email"])){
+                http_response_code (400);
+                echo json_encode (["erro" => "Dados Incompletos."], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
 
             $novoUsuario = [
                 "id" => $dados ["id"],
@@ -46,14 +47,21 @@ $usuarios = json_decode(file_get_contents($arquivo), true);
                 "email" => $dados ["email"]
             ];
 
+            //array dos novos usuarios
+            $usuarios[] = $novoUsuario;
+            file_put_contents ($arquivo, json_encode($usuarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) );
+
+            echo json_encode(["mensagem" => "Usuario inserido com sucesso!", "usuarios" => $usuarios], JSON_UNESCAPED_UNICODE);
+
             //adc o novo usuario ao array
-            array_push($usuarios, $novoUsuario);
-            echo json_encode ('Usuário inserido com sucesso!');
-            print_r($usuarios);
+            // array_push($usuarios, $novoUsuario);
+            // echo json_encode ('Usuário inserido com sucesso!');
+            // print_r($usuarios);
         break;
         
         default:
-            echo " Metodo não enconrtado";
+           http_response_code(405); 
+           echo json_encode(["erro" => "Método não permitido!"], JSON_UNESCAPED_UNICODE);
             break;
     }
 
